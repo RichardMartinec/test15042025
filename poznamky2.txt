@@ -74,4 +74,65 @@ python manage.py createsuperuser
             def detail_student(request, pk):
                 student = Student.objects.get(pk=pk)
                 return render(request, "skola/detail_student.html", {"student":student})
+v index:
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'skola/skola.css' %}">
+    <title>Document</title>
+</head>
+<body>
+   {% if studenti %}
+   <h1>Študenti:</h1>
+   <ul>
+    {% for student in studenti %}
+    <li><a href="{% url 'detail-student' pk=student.id%}">{{student}}</a></li>
+    {% endfor %}
+   </ul>
+   {% endif %}
 
+   {% if ucitelia %}
+   <h1>Učitelia:</h1>
+   <ul>
+    {% for ucitel in ucitelia %}
+    <li><a href="{% url 'detail-ucitel' pk=ucitel.id%}">{{ucitel}}</a></li>
+    {% endfor %}
+   </ul>
+   {% endif %}
+
+   {% if triedy %}
+   <h1>Triedy:</h1>
+   <ul>
+    {% for trieda in triedy %}
+    <li><a href="{% url 'vypis-trieda' pk=trieda.id%}">{{trieda}}</a></li>
+    {% endfor %}
+   </ul>
+   {% endif %}
+   
+
+</body>
+</html>
+
+v deatailoch: 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Učťitelia</title>
+</head>
+<body>
+    <h2>Učiteľ: {{ucitel.titul}} {{ucitel.meno}} {{ucitel.priezvisko}} </h2>
+    <p>Trieda: {{ucitel.trieda.nazov}}</p>
+    <p>Študenti: 
+    <ul>
+        {% for student in studenti%}
+        <li>{{student}}</li>
+        {%endfor%}
+    </ul>
+    </p>
+</body>
+</html>
