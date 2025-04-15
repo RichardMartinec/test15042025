@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Učťitelia</title>
+</head>
+<body>
+    <h2>Učiteľ: {{ucitel.titul}} {{ucitel.meno}} {{ucitel.priezvisko}} </h2>
+    <p>Trieda: {{ucitel.trieda.nazov}}</p>
+    <p>Študenti: 
+    <ul>
+        {% for student in studenti%}
+        <li>{{student}}</li>
+        {%endfor%}
+    </ul>
+    </p>
+</body>
+</html>

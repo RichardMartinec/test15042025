@@ -1,0 +1,197 @@
+1. Inštalácia django do python:
+    pip install django
+    pip list
+        Package  Version
+        -------- -------
+        asgiref  3.8.1
+        Django   5.1.1
+        pip      24.2
+        sqlparse 0.5.1
+        tzdata   2024.2
+
+2. vytvorenie django projektu:
+    django-admin startproject nazov_projektu .
+
+
+3. nastavenie slovenčiny(nepovinné):
+    mysite/settings.py
+
+    LANGUAGE_CODE = 'sk'
+
+    TIME_ZONE = 'Europe/Bratislava'
+
+4. spustenie vývojového servera
+    python manage.py runserver
+
+5. vytvorenie aplikacie v projekte:
+    python manage.py startapp nazov_aplikácie
+
+6. zaregistrovanie aplikácie do projektu (mysite/settings.py)
+    INSTALLED_APPS = [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+        'skuska',
+    ]
+
+7. vytvoriť jednoduché views (skuska/views.py)
+    from django.shortcuts import render
+    from django.http import HttpResponse
+
+    def index(request):
+        return HttpResponse('Hello world!')
+
+8. vytvoriť urlpattern:
+    8.1 mysite/urls.py
+
+        from django.contrib import admin
+        from django.urls import path, include
+
+        urlpatterns = [
+            path('admin/', admin.site.urls),
+            path('skuska/', include('skuska.urls')),
+        ]
+        
+    8.2
+    - vytvoriť súbor urls.py v skuska (priečinok aplikácie)
+    - upraviť urls.py:
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='index'),
+]
+
+    9. Template
+    9.1 Vytvoriť v aplikácii priečinok templates/nazov_aplikácie a v ňom nejaký html súbor(napr. index.html):
+
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulacka</title>
+</head>
+<body>
+    <h1>Kalkulacka</h1>
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="a">
+        <select name="operator">
+            <option value="+">+</option>
+            <option value="-">-</option>
+            <option value="*">*</option>
+            <option value="/">/</option>
+        </select>
+        <input type="text" name="b">
+        <input type="submit">
+    </form>
+    <h2>{{vysledok}}</h2>
+
+</body>
+</html>
+
+9.2 upraviť views:
+
+from django.shortcuts import render
+from django.http import HttpResponse
+
+def index(request):
+    if request.method == "GET":
+        vysledok = 0
+    if request.method == "POST":
+        a = int(request.POST["a"])
+        b = int(request.POST["b"])
+        operator = request.POST["operator"]
+        if operator == "+":
+            vysledok = a + b
+        elif operator == "-":
+            vysledok = a - b
+        elif operator == "*":
+            vysledok = a * b
+        else:
+            vysledok = a / b
+    return render(request, 'skuska/index.html', dict(vysledok=vysledok))
+
+(ALTERNATÍVA MVT/MVC ARCHITEKTÚRA)9.1 pridať do nazov_aplikácie/models.py:
+
+from django.db import models
+
+def spocitaj(prva, druha):
+    return float(prva) + float(druha)
+
+def odpocitaj(prva, druha):
+    return float(prva) - float(druha)
+
+def vynasob(prva, druha):
+    return float(prva) * float(druha)
+
+def vydel(prva,druha):
+    return float(prva) / float(druha)
+
+9.2 upraviť Kalkulacka/views:
+
+from django.shortcuts import render
+
+from . import models
+
+def index(request):
+    error_msg = None
+    vysledok = None
+    if request.method == "POST":
+        try:
+            float(request.POST["prva"])
+            float(request.POST["druha"])
+        except:
+            error_msg = "Prva alebo Druha hodnota nie je cislo!"
+            return render(request, "kalkulacka/index.html", dict(error_msg=error_msg, vysledok=vysledok))
+        
+        if request.POST["operacia"] == "/" and float(request.POST["druha"]) == 0:
+            error_msg = "Nedá sa deliť nulou!"
+            return render(request, "kalkulacka/index.html", dict(error_msg=error_msg, vysledok=vysledok))
+        if request.POST["operacia"] == "+":
+            vysledok = models.spocitaj(request.POST["prva"], request.POST["druha"])
+        elif request.POST["operacia"] == "-":
+            vysledok = models.odpocitaj(request.POST["prva"], request.POST["druha"])
+        elif request.POST["operacia"] == "*":
+            vysledok = models.vynasob(request.POST["prva"], request.POST["druha"])
+        elif request.POST["operacia"] == "/":
+            vysledok = models.vydel(request.POST["prva"], request.POST["druha"])
+        else:
+            error_msg = "Niečo sa pokazilo"
+            return render(request, "kalkulacka/index.html", dict(error_msg=error_msg, vysledok=vysledok))
+    return render(request, "kalkulacka/index.html", dict(error_msg=error_msg, vysledok=vysledok))
+
+
+9.3 Upraviť HTML súbor:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulačka</title>
+</head>
+<body>
+    <h1>Kalkulacka</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <span style="color:red">{{error_msg}}</span>
+        <br>
+        <input type="text" name="prva">
+        <select name="operacia">
+            <option value="+" {% if request.POST.operator == "+" %} selected {% endif %}>+</option>
+            <option value="-" {% if request.POST.operator == "-" %} selected {% endif %}>-</option>
+            <option value="*" {% if request.POST.operator == "*" %} selected {% endif %}>*</option>
+            <option value="/" {% if request.POST.operator == "/" %} selected {% endif %}>/</option>
+            <option value="**" {% if request.POST.operator == "**" %} selected {% endif %}>**</option>
+        </select>
+        <input type="text" name="druha" value={{request.POST.b}}><br>
+        <input type="submit" text="vypočítať"><br>
+        {{vysledok}}
+    </form>
+</body>
+</html>

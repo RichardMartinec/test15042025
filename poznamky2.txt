@@ -1,0 +1,77 @@
+1. Štruktúra projektu:
+/mysite - hlavný priečinok celého projektu
+- settings.py - nastavenia celého projektu (región, zaregistrovanie aplikácie, ...)
+- urls.py - router pre celý projekt
+
+/skola - priečinok aplikácie
+- models.py - definícia modelov (objektov) aplikácie a ich atribútov a metód, spojenie s databázov
+- views.py - controller, logika aplikácie, spracovanie dát, posielanie do výstupu (template)
+- templates/skola/index.html - šablóna pre výstup tzn. zobrazenie údajov
+
+manage.py - správca projektu, súbor cez ktorý robíme s Djangom
+db.sqlite3 - predvolená databáza (dá sa zmeniť v settings.py)
+
+2. Postup:
+- definícia modelov v models.py:
+from django.db import models
+
+class Student(models.Model):
+    meno = models.CharField(max_length=20) # textové pole
+    priezvisko = models.CharField(max_length=20)
+    trieda = models.CharField(max_length=10) alebo trieda = models.ForeignKey(Trieda, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.meno} {self.priezvisko}, {self.trieda}"
+
+    class Meta:
+        verbose_name = "Študent"
+        verbose_name_plural = "Študenti"
+        ordering = ["priezvisko"]
+
+
+- migrácia modelov do databázy:
+python manage.py makemigrations
+python manage.py migrate
+
+tieto príkazy musíme použiť vždy ak zmeníme niečo v models.py
+
+- registrácia aplikácie do admin rozhrania:
+súbor admin.py:
+from django.contrib import admin
+from .models import Student # naimportovanie modelu Student do admin.py
+
+admin.site.register(Student)
+
+-úprava views:
+def index(request):
+    studenti = Student.objects.all()
+    ucitelia = Ucitel.objects.all()
+    triedy = Trieda.objects.all()
+    return render(request, "skola/index.html", {"studenti":studenti, "ucitelia":ucitelia, "triedy":triedy})
+
+def list_students(request):
+    studenti = Student.objects.all()
+    return render(request, "skola/index.html", {"studenti":studenti})  
+
+-úprava urls:
+    path('', views.index, name="index"),
+    path('studenti/', views.list_students, name="list-students"),
+    path('studenti/<pk>/', views.detail_student, name="detail-student"), <odkaz> 
+
+- vytvorenie prvého superužívateľa:
+python manage.py createsuperuser
+
+- vytvorenie odkazov:
+    vo urls.py: 
+            path('studenti/<pk>/', views.detail_student, name="detail-student"),
+    vo views.py:
+            def vypis_trieda(request, pk):
+                trieda = Trieda.objects.get(pk=pk) #vybere do premennej trieda priradí jeden objekt konkrétnej triedy (pk)
+                studenti = Student.objects.filter(trieda=trieda).order_by("priezvisko")
+                ucitel = Ucitel.objects.get(trieda=trieda)
+                return render(request, "skola/vypis_trieda.html", {"trieda":trieda, "studenti":studenti, "ucitel":ucitel})
+
+            def detail_student(request, pk):
+                student = Student.objects.get(pk=pk)
+                return render(request, "skola/detail_student.html", {"student":student})
+
